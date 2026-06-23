@@ -43,31 +43,53 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
+    resetPasswordToken: {
+      type: String,
+    },
+
+    resetPasswordExpire: {
+      type: Date,
+    },
+
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+
+    otp: {
+      type: String,
+    },
+
+    otpExpire: {
+      type: Date,
+    },
+
     refreshToken: {
       type: String,
       default: "",
     },
+    recentlyViewed: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+      },
+    ],
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 userSchema.pre("save", async function () {
-
   if (!this.isModified("password")) {
     return;
   }
 
   this.password = await bcrypt.hash(this.password, 10);
-
 });
 
 userSchema.methods.comparePassword = async function (enteredPassword) {
-    return await bcrypt.compare(
-        enteredPassword,
-        this.password
-    );
+  return await bcrypt.compare(enteredPassword, this.password);
 };
 
 const User = mongoose.model("User", userSchema);

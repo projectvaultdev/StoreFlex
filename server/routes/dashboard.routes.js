@@ -1,12 +1,11 @@
 import express from "express";
 
 import {
-  createCategory,
-  getCategories,
-  getCategory,
-  updateCategory,
-  deleteCategory,
-} from "../controllers/category.controller.js";
+  getDashboardStats,
+  monthlySales,
+  recentOrders,
+  topProducts,
+} from "../controllers/dashboard.controller.js";
 
 import { protect } from "../middleware/auth.middleware.js";
 
@@ -16,29 +15,32 @@ import { ROLES } from "../constants/roles.js";
 
 const router = express.Router();
 
-router.post(
-  "/",
+router.get(
+  "/stats",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  createCategory,
+  getDashboardStats,
 );
 
-router.get("/", getCategories);
-
-router.get("/:id", getCategory);
-
-router.put(
-  "/:id",
+router.get(
+  "/monthly-sales",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  updateCategory,
+  monthlySales,
 );
 
-router.delete(
-  "/:id",
+router.get(
+  "/top-products",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  deleteCategory,
+  topProducts,
+);
+
+router.get(
+  "/recent-orders",
+  protect,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
+  recentOrders,
 );
 
 export default router;
