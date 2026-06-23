@@ -1,44 +1,36 @@
 import express from "express";
 
 import {
-  createCategory,
-  getCategories,
-  getCategory,
-  updateCategory,
-  deleteCategory,
-} from "../controllers/category.controller.js";
+  categoryAnalytics,
+  orderStatusAnalytics,
+  userGrowthAnalytics,
+} from "../controllers/analytics.controller.js";
 
 import { protect } from "../middleware/auth.middleware.js";
-
 import { authorize } from "../middleware/role.middleware.js";
-
 import { ROLES } from "../constants/roles.js";
 
 const router = express.Router();
 
-router.post(
-  "/",
+router.get(
+  "/category",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  createCategory,
+  categoryAnalytics,
 );
 
-router.get("/", getCategories);
-
-router.get("/:id", getCategory);
-
-router.put(
-  "/:id",
+router.get(
+  "/order-status",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  updateCategory,
+  orderStatusAnalytics,
 );
 
-router.delete(
-  "/:id",
+router.get(
+  "/user-growth",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  deleteCategory,
+  userGrowthAnalytics,
 );
 
 export default router;
