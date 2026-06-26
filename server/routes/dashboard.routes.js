@@ -1,6 +1,7 @@
 import express from "express";
 
 import {
+  getDashboardData,
   getDashboardStats,
   monthlySales,
   recentOrders,
@@ -14,6 +15,14 @@ import { authorize } from "../middleware/role.middleware.js";
 import { ROLES } from "../constants/roles.js";
 
 const router = express.Router();
+
+// Main comprehensive dashboard endpoint
+router.get(
+  "/",
+  protect,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
+  getDashboardData,
+);
 
 router.get(
   "/stats",

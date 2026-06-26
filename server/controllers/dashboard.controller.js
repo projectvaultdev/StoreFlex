@@ -1,6 +1,69 @@
 import User from "../models/User.model.js";
 import Product from "../models/Product.model.js";
 import Order from "../models/Order.model.js";
+import Category from "../models/Category.model.js";
+
+export const getDashboardData = async (req, res) => {
+  try {
+    // Get counts
+    const totalUsers = await User.countDocuments();
+    const totalProducts = await Product.countDocuments();
+    const totalCategories = await Category.countDocuments();
+    const totalOrders = await Order.countDocuments();
+
+    // Get revenue
+    const revenue = await Order.aggregate([
+      {
+        $match: {
+          paymentStatus: "PAID",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: {
+            $sum: "$totalAmount",
+          },
+        },
+      },
+    ]);
+
+    // Get low stock products
+    const lowStockProducts = await Product.find({
+      $expr: {
+        $lte: ["$stock", "$lowStockThreshold"],
+      },
+      isDeleted: false,
+    })
+      .select("name stock lowStockThreshold price")
+      .limit(5);
+
+    // Get recent orders
+    const recentOrders = await Order.find()
+      .populate("user", "name email")
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        totalProducts,
+        totalCategories,
+        totalOrders,
+        totalRevenue: revenue[0]?.totalRevenue || 0,
+        lowStockProducts,
+        recentOrders,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 export const getDashboardStats = async (req, res) => {
   try {

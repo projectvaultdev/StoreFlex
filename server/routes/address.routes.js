@@ -1,10 +1,12 @@
-import express, { Router } from "express";
+import express from "express";
+
 import {
   addAddress,
   getAddresses,
   deleteAddress,
-} from "../controllers/address.controller";
-import { protect } from "../middleware/auth.middleware";
+} from "../controllers/address.controller.js";
+
+import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -14,4 +16,4 @@ router.get("/", protect, getAddresses);
 
 router.delete("/:id", protect, deleteAddress);
 
-export default Router;
+export default router;

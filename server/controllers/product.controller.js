@@ -1,8 +1,47 @@
 import Product from "../models/Product.model.js";
+import slugify from "slugify";
 
 export const createProduct = async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const {
+      name,
+      description,
+      shortDescription,
+      brand,
+      category,
+      price,
+      discountPrice,
+      stock,
+      sku,
+      isFeatured,
+    } = req.body;
+
+    const product = await Product.create({
+      name,
+
+      slug: slugify(name, {
+        lower: true,
+        strict: true,
+      }),
+
+      description,
+
+      shortDescription,
+
+      brand,
+
+      category,
+
+      price,
+
+      discountPrice,
+
+      stock,
+
+      sku,
+
+      isFeatured,
+    });
 
     res.status(201).json({
       success: true,

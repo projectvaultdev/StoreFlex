@@ -1,8 +1,16 @@
+import slugify from "slugify";
 import Category from "../models/Category.model.js";
 
 export const createCategory = async (req, res) => {
   try {
-    const category = await Category.create(req.body);
+    const category = await Category.create({
+      name: req.body.name,
+
+      slug: slugify(req.body.name, {
+        lower: true,
+        strict: true,
+      }),
+    });
 
     res.status(201).json({
       success: true,

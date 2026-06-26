@@ -10,6 +10,8 @@ import {
   changePassword,
   sendOTP,
   verifyOTP,
+  getMe,
+  updateProfile,
 } from "../controllers/auth.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 
@@ -24,5 +26,9 @@ router.post("/reset-password/:token", resetPassword);
 router.put("/change-password", protect, changePassword);
 router.post("/send-otp", protect, sendOTP);
 router.post("/verify-otp", protect, verifyOTP);
+
+// Profile
+router.get("/me", protect, getMe);
+router.put("/me", protect, updateProfile);
 
 export default router;
