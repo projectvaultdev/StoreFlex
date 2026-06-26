@@ -149,6 +149,8 @@ export const cancelOrder = async (req, res) => {
 
     order.orderStatus = "CANCELLED";
 
+    await order.save();
+
     for (const item of order.orderItems) {
       const product = await Product.findById(item.product);
 

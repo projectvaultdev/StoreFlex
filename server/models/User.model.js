@@ -38,6 +38,11 @@ const userSchema = new mongoose.Schema(
       default: ROLES.USER,
     },
 
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
     isVerified: {
       type: Boolean,
       default: false,

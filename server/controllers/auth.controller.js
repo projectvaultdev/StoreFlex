@@ -11,7 +11,6 @@ export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Check existing user
     const existingUser = await User.findOne({
       email,
     });
@@ -23,7 +22,6 @@ export const register = async (req, res) => {
       });
     }
 
-    // Create user
     const user = await User.create({
       name,
       email,
@@ -32,8 +30,13 @@ export const register = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "User registered successfully",
-      user,
+      message: "Registration Successful",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -47,65 +50,82 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({
+      email,
+    });
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid Email or Password",
       });
     }
 
-    // Check password
-    const isPasswordMatched = await user.comparePassword(password);
+    if (user.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been blocked",
+      });
+    }
 
-    if (!isPasswordMatched) {
+    const isMatch = await user.comparePassword(password);
+
+    if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid Email or Password",
       });
     }
 
-    // Generate Tokens
     const accessToken = generateAccessToken(user._id, user.role);
 
     const refreshToken = generateRefreshToken(user._id);
 
-    // Save refresh token
     user.refreshToken = refreshToken;
 
     await user.save();
 
-    res
-      .cookie("accessToken", accessToken, {
-        httpOnly: true,
-        secure: false, // production me true
-        sameSite: "strict",
-        maxAge: 15 * 60 * 1000,
-      })
-      .cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: false, // production me true
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      })
-      .status(200)
-      .json({
-        success: true,
-        message: "Login successful",
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          isVerified: user.isVerified,
-          avatar: user.avatar,
-        },
-      });
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      success: true,
+
+      message: "Login Successful",
+
+      accessToken,
+
+      user: {
+        _id: user._id,
+
+        name: user.name,
+
+        email: user.email,
+
+        avatar: user.avatar,
+
+        phone: user.phone,
+
+        role: user.role,
+
+        isVerified: user.isVerified,
+      },
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
+
       message: error.message,
     });
   }
@@ -114,33 +134,26 @@ export const login = async (req, res) => {
 export const logout = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (user.isBlocked) {
-      return res.status(403).json({
-        success: false,
-        message: "Your account has been blocked",
-      });
+
+    if (user) {
+      user.refreshToken = "";
+
+      await user.save();
     }
 
-    user.refreshToken = "";
+    res.clearCookie("accessToken");
 
-    res
-      .clearCookie("accessToken")
-      .clearCookie("refreshToken")
-      .status(200)
-      .json({
-        success: true,
-        message: "Logged out successfully",
-      });
+    res.clearCookie("refreshToken");
 
-    await user.save();
-
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Logged out successfully",
+
+      message: "Logout Successful",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
+
       message: error.message,
     });
   }
@@ -184,6 +197,12 @@ export const refreshAccessToken = async (req, res) => {
       sameSite: "strict",
       secure: false,
       maxAge: 15 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      success: true,
+
+      accessToken,
     });
   } catch (error) {
     res.status(401).json({
@@ -390,6 +409,62 @@ export const verifyOTP = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select(
+      "-password -refreshToken",
+    );
+
+    res.status(200).json({
+      success: true,
+
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+
+      message: error.message,
+    });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+
+        message: "User not found",
+      });
+    }
+
+    user.name = req.body.name || user.name;
+
+    user.phone = req.body.phone || user.phone;
+
+    user.avatar = req.body.avatar || user.avatar;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+
+      message: "Profile Updated",
+
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+
       message: error.message,
     });
   }
