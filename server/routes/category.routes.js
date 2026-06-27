@@ -6,6 +6,7 @@ import {
   getCategory,
   updateCategory,
   deleteCategory,
+  getProductsByCategory,
 } from "../controllers/category.controller.js";
 
 import { protect } from "../middleware/auth.middleware.js";
@@ -40,5 +41,7 @@ router.delete(
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
   deleteCategory,
 );
+
+router.get("/category/:categoryId", getProductsByCategory);
 
 export default router;

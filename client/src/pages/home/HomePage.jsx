@@ -28,9 +28,10 @@ const HomePage = () => {
     data: categoriesData,
   } = useGetCategoriesQuery();
 
-  const products = productsData?.products || [];
+  const products =
+    productsData?.data?.products || [];
   const categories = categoriesData?.categories || [];
-
+  console.log("product=> ", productsData);
   // Hooks ke baad redirect
   if (
     user &&
