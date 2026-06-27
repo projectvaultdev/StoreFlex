@@ -1,4 +1,16 @@
 import Cart from "../models/Cart.model.js";
+import Product from "../models/Product.model.js";
+
+const calculateTotal = (items) => {
+  return items.reduce((total, item) => {
+    const price =
+      item.product.discountPrice > 0
+        ? item.product.discountPrice
+        : item.product.price;
+
+    return total + price * item.quantity;
+  }, 0);
+};
 
 export const addToCart = async (req, res) => {
   try {
@@ -43,6 +55,10 @@ export const addToCart = async (req, res) => {
         quantity,
       });
     }
+
+    await cart.populate("items.product");
+
+    cart.totalAmount = calculateTotal(cart.items);
 
     await cart.save();
 
@@ -119,13 +135,28 @@ export const updateCartItem = async (req, res) => {
       });
     }
 
+    const product = await Product.findById(productId);
+
+    if (quantity > product.stock) {
+      return res.status(400).json({
+        success: false,
+
+        message: "Insufficient Stock",
+      });
+    }
+
     item.quantity = quantity;
+
+    await cart.populate("items.product");
+
+    cart.totalAmount = calculateTotal(cart.items);
 
     await cart.save();
 
     res.status(200).json({
       success: true,
       message: "Quantity updated",
+      cart,
     });
   } catch (error) {
     res.status(500).json({
@@ -151,11 +182,14 @@ export const removeCartItem = async (req, res) => {
     cart.items = cart.items.filter(
       (item) => item.product.toString() !== req.params.productId,
     );
+    await cart.populate("items.product");
 
+    cart.totalAmount = calculateTotal(cart.items);
     await cart.save();
 
     res.status(200).json({
       success: true,
+      cart,
       message: "Item removed",
     });
   } catch (error) {
@@ -168,14 +202,29 @@ export const removeCartItem = async (req, res) => {
 
 export const clearCart = async (req, res) => {
   try {
-    await Cart.findOneAndUpdate(
-      {
-        user: req.user._id,
-      },
-      {
-        items: [],
-      },
-    );
+    const cart = await Cart.findOne({
+      user: req.user._id,
+    });
+
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+
+        message: "Cart not found",
+      });
+    }
+
+    cart.items = [];
+
+    cart.totalAmount = 0;
+
+    await cart.save();
+
+    res.status(200).json({
+      success: true,
+
+      cart,
+    });
 
     res.status(200).json({
       success: true,
@@ -221,7 +270,9 @@ export const moveToSaveForLater = async (req, res) => {
 
     // Remove from cart
     cart.items = cart.items.filter((i) => i.product.toString() !== productId);
+    await cart.populate("items.product");
 
+    cart.totalAmount = calculateTotal(cart.items);
     await cart.save();
 
     res.status(200).json({
@@ -300,15 +351,24 @@ export const moveToCart = async (req, res) => {
       });
     }
 
-    cart.items.push({
-      product: item.product,
-      quantity: item.quantity,
-    });
+    const existing = cart.items.find((i) => i.product.toString() === productId);
+
+    if (existing) {
+      existing.quantity += item.quantity;
+    } else {
+      cart.items.push({
+        product: item.product,
+
+        quantity: item.quantity,
+      });
+    }
 
     cart.saveForLater = cart.saveForLater.filter(
       (i) => i.product.toString() !== productId,
     );
+    await cart.populate("items.product");
 
+    cart.totalAmount = calculateTotal(cart.items);
     await cart.save();
 
     res.status(200).json({

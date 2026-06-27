@@ -124,3 +124,48 @@ export const deleteCategory = async (req, res) => {
     });
   }
 };
+
+export const getProductsByCategory = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 12;
+
+    const skip = (page - 1) * limit;
+
+    const products = await Product.find({
+      category: categoryId,
+      isDeleted: false,
+      isActive: true,
+    })
+      .populate("category", "name slug")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Product.countDocuments({
+      category: categoryId,
+      isDeleted: false,
+      isActive: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        products,
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit),
+        },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

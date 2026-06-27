@@ -26,6 +26,9 @@ import {
   removeReport,
   getReportedProducts,
   reportProduct,
+  getProductsByCategory,
+  getBrands,
+  getPriceRange,
 } from "../controllers/product.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 import { authorize } from "../middleware/role.middleware.js";
@@ -33,32 +36,22 @@ import { ROLES } from "../constants/roles.js";
 
 const router = express.Router();
 
+// Public read-only routes
+router.get("/latest", getLatestProducts);
+router.get("/featured", getFeaturedProducts);
+router.get("/trending", getTrendingProducts);
+router.get("/top-selling", getTopSellingProducts);
+router.get("/filters/brands", getBrands);
+router.get("/filters/price-range", getPriceRange);
+router.get("/category/:categoryId", getProductsByCategory);
+
+// Admin specific routes
 router.post(
   "/",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
   createProduct,
 );
-
-router.get("/", getProducts);
-router.get("/:id", getProduct);
-router.put(
-  "/:id",
-  protect,
-  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  updateProduct,
-);
-
-router.delete(
-  "/:id",
-  protect,
-  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  deleteProduct,
-);
-
-router.get("/featured", getFeaturedProducts);
-
-router.get("/related/:id", getRelatedProducts);
 
 router.put(
   "/featured/:id",
@@ -82,39 +75,45 @@ router.put(
 );
 
 router.get(
-  "/low-stock",
+  "/admin/low-stock",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
   getLowStockProducts,
 );
 
 router.delete(
-  "/bulk-delete",
+  "/admin/bulk-delete",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
   bulkDeleteProducts,
 );
 
-router.get("/bought-together/:id", getBoughtTogetherProducts);
+router.get(
+  "/admin/reported",
+  protect,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
+  getReportedProducts,
+);
 
-router.get("/top-selling", getTopSellingProducts);
+router.delete(
+  "/:id/report/:reportId",
+  protect,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
+  removeReport,
+);
 
-router.get("/latest", getLatestProducts);
-
-router.get("/trending", getTrendingProducts);
-
+// Protected user routes
 router.get("/recently-viewed", protect, getRecentlyViewedProducts);
 
-router.get("/compare", compareProducts);
+router.post("/:id/report", protect, reportProduct);
 
+// FAQ routes (admin specific for create/update/delete)
 router.post(
   "/:id/faq",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
   addFAQ,
 );
-
-router.get("/:id/faq", getFAQs);
 
 router.put(
   "/:id/faq/:faqId",
@@ -130,20 +129,32 @@ router.delete(
   deleteFAQ,
 );
 
-router.post("/:id/report", protect, reportProduct);
+// Product specific comparison & related routes
+router.get("/compare", compareProducts);
+router.get("/related/:id", getRelatedProducts);
+router.get("/bought-together/:id", getBoughtTogetherProducts);
 
-router.get(
-  "/reported",
+// General search route
+router.get("/", getProducts);
+
+// Get FAQs for a product (public)
+router.get("/:id/faq", getFAQs);
+
+// Core product routes (must be last)
+router.get("/:id", getProduct);
+
+router.put(
+  "/:id",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  getReportedProducts,
+  updateProduct,
 );
 
 router.delete(
-  "/:id/report/:reportId",
+  "/:id",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  removeReport,
+  deleteProduct,
 );
 
 export default router;

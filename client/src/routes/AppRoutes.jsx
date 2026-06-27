@@ -29,6 +29,8 @@ import CartPage from "../pages/cart/CartPage";
 import CheckoutPage from "../pages/checkout/CheckoutPage";
 import MyOrdersPage from "../pages/order/MyOrdersPage";
 import OrderDetailsPage from "../pages/order/OrderDetailsPage";
+import CategoryProductsPage from "../pages/category/CategoryProductsPage";
+import WishlistPage from "../pages/wishlist/WishlistPage";
 
 /* Admin Pages */
 
@@ -42,6 +44,7 @@ import EditProductPage from "../pages/admin/EditProductPage";
 import CategoriesAdmin from "../pages/admin/CategoriesAdmin";
 import CreateCategoryPage from "../pages/admin/CreateCategoryPage";
 import EditCategoryPage from "../pages/admin/EditCategoryPage";
+
 
 import OrdersAdmin from "../pages/admin/OrdersAdmin";
 import UsersAdmin from "../pages/admin/UsersAdmin";
@@ -90,6 +93,26 @@ const AppRoutes = () => {
             <MainLayout>
               <CategoriesPage />
             </MainLayout>
+          }
+        />
+
+        <Route
+          path="/categories/:id"
+          element={
+            <MainLayout>
+              <CategoryProductsPage />
+            </MainLayout>
+          }
+        />
+
+        <Route
+          path="/wishlist"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <WishlistPage />
+              </MainLayout>
+            </ProtectedRoute>
           }
         />
 

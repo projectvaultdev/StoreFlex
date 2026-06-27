@@ -1,122 +1,309 @@
 import { Link } from "react-router-dom";
 import {
+    Trash2,
+    Minus,
+    Plus,
+    ShoppingBag
+} from "lucide-react";
+
+import toast from "react-hot-toast";
+
+import {
     useGetCartQuery,
     useRemoveFromCartMutation,
+    useUpdateCartMutation,
+    useClearCartMutation,
 } from "../../redux/api/cartApi";
 
 const CartPage = () => {
 
-    const {
-        data,
-        isLoading,
-    } = useGetCartQuery();
+    const { data, isLoading } =
+        useGetCartQuery();
 
-    const [
-        removeFromCart,
-    ] =
+    const [removeFromCart] =
         useRemoveFromCartMutation();
 
-    if (isLoading) {
-        return <h2>Loading...</h2>;
-    }
+    const [updateCart] =
+        useUpdateCartMutation();
 
-    const cartItems =
-        data?.cart?.items || [];
+    const [clearCart] =
+        useClearCartMutation();
+
+    const cart =
+        data?.cart;
+
+    const items =
+        cart?.items || [];
 
     const total =
-        cartItems.reduce(
-            (acc, item) =>
-                acc +
-                item.price *
-                item.quantity,
-            0
+        cart?.totalAmount || 0;
+
+    const removeItem = async (productId) => {
+
+        try {
+
+            await removeFromCart(productId).unwrap();
+
+            toast.success("Removed");
+
+        } catch {
+
+            toast.error("Failed");
+
+        }
+
+    };
+
+    const changeQty = async (
+        productId,
+        quantity
+    ) => {
+
+        if (quantity < 1) return;
+
+        try {
+
+            await updateCart({
+                productId,
+                quantity,
+            }).unwrap();
+
+        } catch (err) {
+
+            toast.error(
+                err?.data?.message ||
+                "Failed"
+            );
+
+        }
+
+    };
+
+    const clear = async () => {
+
+        if (
+            !window.confirm(
+                "Clear cart?"
+            )
+        )
+            return;
+
+        await clearCart().unwrap();
+
+        toast.success(
+            "Cart Cleared"
         );
+
+    };
+
+    if (isLoading) {
+
+        return (
+            <div className="max-w-7xl mx-auto py-20 text-center">
+
+                Loading...
+
+            </div>
+        );
+
+    }
+
+    if (items.length === 0) {
+
+        return (
+
+            <div className="max-w-4xl mx-auto py-24 text-center">
+
+                <ShoppingBag
+                    className="mx-auto mb-6 text-gray-400"
+                    size={80}
+                />
+
+                <h1 className="text-3xl font-bold">
+
+                    Your Cart is Empty
+
+                </h1>
+
+                <p className="text-gray-500 mt-3">
+
+                    Start shopping now.
+
+                </p>
+
+                <Link
+                    to="/products"
+                    className="inline-block mt-8 bg-black text-white px-6 py-3 rounded-lg"
+                >
+                    Continue Shopping
+                </Link>
+
+            </div>
+
+        );
+
+    }
 
     return (
 
-        <div className="max-w-5xl mx-auto p-5">
+        <div className="max-w-7xl mx-auto px-4 py-12">
 
-            <h1 className="text-3xl font-bold mb-8">
+            <h1 className="text-4xl font-bold mb-10">
+
                 Shopping Cart
+
             </h1>
 
-            {cartItems.map(
-                (item) => (
+            <div className="grid lg:grid-cols-3 gap-10">
 
-                    <div
-                        key={item._id}
-                        className="
-            flex
-            justify-between
-            border-b
-            py-4
-            "
-                    >
+                <div className="lg:col-span-2 space-y-6">
 
-                        <div>
+                    {
 
-                            <h3>
-                                {item.product.name}
-                            </h3>
+                        items.map(item => {
 
-                            <p>
-                                ₹{item.price}
-                            </p>
+                            const product =
+                                item.product;
 
-                            <p>
-                                Qty:
-                                {item.quantity}
-                            </p>
+                            const price =
+                                product.discountPrice > 0
+                                    ? product.discountPrice
+                                    : product.price;
+
+                            return (
+
+                                <div
+                                    key={product._id}
+                                    className="border rounded-xl p-5 flex gap-5"
+                                >
+
+                                    <img
+                                        src={
+                                            product.images?.[0]?.url ||
+                                            "https://placehold.co/200x200?text=No+Image"
+                                        }
+                                        className="w-28 h-28 rounded-lg object-cover"
+                                        alt={product.name}
+                                    />
+
+                                    <div className="flex-1">
+
+                                        <h2 className="font-semibold text-lg">
+
+                                            {product.name}
+
+                                        </h2>
+
+                                        <p className="text-gray-500">
+
+                                            ₹{price}
+
+                                        </p>
+
+                                        <div className="flex items-center gap-3 mt-5">
+
+                                            <button
+                                                onClick={() =>
+                                                    changeQty(
+                                                        product._id,
+                                                        item.quantity - 1
+                                                    )
+                                                }
+                                                className="border rounded p-2"
+                                            >
+                                                <Minus size={16} />
+                                            </button>
+
+                                            <span>
+
+                                                {item.quantity}
+
+                                            </span>
+
+                                            <button
+                                                onClick={() =>
+                                                    changeQty(
+                                                        product._id,
+                                                        item.quantity + 1
+                                                    )
+                                                }
+                                                className="border rounded p-2"
+                                            >
+                                                <Plus size={16} />
+                                            </button>
+
+                                        </div>
+
+                                    </div>
+
+                                    <button
+                                        onClick={() =>
+                                            removeItem(product._id)
+                                        }
+                                    >
+                                        <Trash2 className="text-red-500" />
+                                    </button>
+
+                                </div>
+
+                            );
+
+                        })
+
+                    }
+
+                </div>
+
+                <div>
+
+                    <div className="border rounded-xl p-6 sticky top-24">
+
+                        <h2 className="text-2xl font-bold">
+
+                            Order Summary
+
+                        </h2>
+
+                        <div className="flex justify-between mt-6">
+
+                            <span>
+
+                                Total
+
+                            </span>
+
+                            <span className="font-bold">
+
+                                ₹{total}
+
+                            </span>
 
                         </div>
 
-                        <button
-                            onClick={() =>
-                                removeFromCart(
-                                    item._id
-                                )
-                            }
-                            className="
-              text-red-500
-              "
+                        <Link
+                            to="/checkout"
+                            className="block mt-8 text-center bg-black text-white py-3 rounded-lg"
                         >
-                            Remove
+                            Proceed To Checkout
+                        </Link>
+
+                        <button
+                            onClick={clear}
+                            className="w-full mt-3 border border-red-500 text-red-500 py-3 rounded-lg hover:bg-red-50"
+                        >
+                            Clear Cart
                         </button>
 
                     </div>
 
-                )
-            )}
-
-            <div className="mt-8">
-
-                <h2 className="text-2xl font-bold">
-
-                    Total :
-                    ₹{total}
-
-                </h2>
+                </div>
 
             </div>
-
-            <Link
-                to="/checkout"
-                className="
-  inline-block
-  mt-4
-  bg-green-600
-  text-white
-  px-5
-  py-3
-  rounded
-  "
-            >
-                Proceed To Checkout
-            </Link>
 
         </div>
 
     );
+
 };
 
 export default CartPage;

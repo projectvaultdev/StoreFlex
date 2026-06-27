@@ -10,10 +10,12 @@ import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/", protect, addToWishlist);
+router.use(protect);
 
-router.get("/", protect, getWishlist);
+router.get("/", getWishlist);
 
-router.delete("/:productId", protect, removeFromWishlist);
+router.post("/", addToWishlist);
+
+router.delete("/:productId", removeFromWishlist);
 
 export default router;
