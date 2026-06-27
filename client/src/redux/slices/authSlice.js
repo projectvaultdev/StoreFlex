@@ -19,21 +19,14 @@ const authSlice = createSlice({
       state.accessToken = action.payload.accessToken || null;
       state.isAuthenticated = true;
       state.authError = null;
-      console.log("Redux: setCredentials action", {
-        user: action.payload.user,
-        role: action.payload.user?.role,
-        hasToken: !!action.payload.accessToken,
-      });
     },
 
     setAuthLoading: (state, action) => {
       state.authLoading = action.payload;
-      console.log("Redux: setAuthLoading", action.payload);
     },
 
     setAuthError: (state, action) => {
       state.authError = action.payload;
-      console.log("Redux: setAuthError", action.payload);
     },
 
     updateUser: (state, action) => {
@@ -41,7 +34,6 @@ const authSlice = createSlice({
         ...state.user,
         ...action.payload,
       };
-      console.log("Redux: updateUser action", state.user);
     },
 
     logoutUser: (state) => {
@@ -50,7 +42,6 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.authLoading = false;
       state.authError = null;
-      console.log("Redux: logoutUser action");
     },
 
     clearAuthError: (state) => {

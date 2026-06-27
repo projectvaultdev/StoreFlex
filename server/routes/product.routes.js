@@ -31,6 +31,7 @@ import {
   getPriceRange,
 } from "../controllers/product.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
+import { upload } from "../middleware/upload.middleware.js";
 import { authorize } from "../middleware/role.middleware.js";
 import { ROLES } from "../constants/roles.js";
 
@@ -45,11 +46,11 @@ router.get("/filters/brands", getBrands);
 router.get("/filters/price-range", getPriceRange);
 router.get("/category/:categoryId", getProductsByCategory);
 
-// Admin specific routes
 router.post(
   "/",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
+  upload.array("images", 10),
   createProduct,
 );
 
@@ -147,6 +148,7 @@ router.put(
   "/:id",
   protect,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
+  upload.array("images", 10),
   updateProduct,
 );
 

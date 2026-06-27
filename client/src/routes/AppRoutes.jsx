@@ -48,7 +48,6 @@ import EditCategoryPage from "../pages/admin/EditCategoryPage";
 
 import OrdersAdmin from "../pages/admin/OrdersAdmin";
 import UsersAdmin from "../pages/admin/UsersAdmin";
-import StaffAdmin from "../pages/admin/StaffAdmin";
 
 const AppRoutes = () => {
   return (
@@ -301,16 +300,7 @@ const AppRoutes = () => {
           }
         />
 
-        <Route
-          path="/admin/staff"
-          element={
-            <AdminRoute>
-              <AdminLayout>
-                <StaffAdmin />
-              </AdminLayout>
-            </AdminRoute>
-          }
-        />
+
 
         {/* ========================= */}
         {/* 404 */}

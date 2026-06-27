@@ -1,5 +1,6 @@
 import Product from "../models/Product.model.js";
 import slugify from "slugify";
+import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 
 export const createProduct = async (req, res) => {
   try {
@@ -16,31 +17,38 @@ export const createProduct = async (req, res) => {
       isFeatured,
     } = req.body;
 
+    let images = [];
+
+    // Upload Multiple Images
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map((file) =>
+        uploadToCloudinary(file.buffer),
+      );
+
+      const results = await Promise.all(uploadPromises);
+
+      images = results.map((result) => ({
+        url: result.secure_url,
+        publicId: result.public_id,
+      }));
+    }
+
     const product = await Product.create({
       name,
-
       slug: slugify(name, {
         lower: true,
         strict: true,
       }),
-
       description,
-
       shortDescription,
-
       brand,
-
       category,
-
       price,
-
       discountPrice,
-
       stock,
-
       sku,
-
       isFeatured,
+      images,
     });
 
     res.status(201).json({
@@ -48,6 +56,8 @@ export const createProduct = async (req, res) => {
       product,
     });
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -192,10 +202,7 @@ export const getProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const product = await Product.findById(req.params.id);
 
     if (!product) {
       return res.status(404).json({
@@ -204,11 +211,78 @@ export const updateProduct = async (req, res) => {
       });
     }
 
+    const {
+      name,
+      description,
+      shortDescription,
+      brand,
+      category,
+      price,
+      discountPrice,
+      stock,
+      sku,
+      isFeatured,
+    } = req.body;
+
+    if (name) {
+      product.name = name;
+      product.slug = slugify(name, {
+        lower: true,
+        strict: true,
+      });
+    }
+
+    if (description !== undefined) product.description = description;
+
+    if (shortDescription !== undefined)
+      product.shortDescription = shortDescription;
+
+    if (brand !== undefined) product.brand = brand;
+
+    if (category !== undefined) product.category = category;
+
+    if (price !== undefined) product.price = price;
+
+    if (discountPrice !== undefined) product.discountPrice = discountPrice;
+
+    if (stock !== undefined) product.stock = stock;
+
+    if (sku !== undefined) product.sku = sku;
+
+    if (isFeatured !== undefined) product.isFeatured = isFeatured;
+
+    // Upload new images
+    if (req.files && req.files.length > 0) {
+      // Delete old Cloudinary images
+      if (product.images?.length > 0) {
+        await Promise.all(
+          product.images.map((img) =>
+            cloudinary.uploader.destroy(img.publicId),
+          ),
+        );
+      }
+
+      const uploadPromises = req.files.map((file) =>
+        uploadToCloudinary(file.buffer),
+      );
+
+      const results = await Promise.all(uploadPromises);
+
+      product.images = results.map((result) => ({
+        url: result.secure_url,
+        publicId: result.public_id,
+      }));
+    }
+
+    await product.save();
+
     res.status(200).json({
       success: true,
       product,
     });
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       success: false,
       message: error.message,
